@@ -2,10 +2,16 @@
 set -euo pipefail
 PROFILE="${1:-base}" # base|hyprland|x11|mac|windows
 
-export UID="$(id -u)" GID="$(id -g)"
-# For Wayland profile, you usually need these exported:
-# export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-# export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+# Resolve host home path for compose
+OS="$(uname -s)"
+case "$OS" in
+Linux | Darwin) export HOST_HOME="${HOME}" ;;
+MINGW* | MSYS* | CYGWIN*) export HOST_HOME="${USERPROFILE}" ;; # Git Bash/Windows
+*) export HOST_HOME="${HOME}" ;;
+esac
+
+export HOST_UID="${UID:-$(id -u)}"
+export HOST_GID="$(id -g)"
 
 case "$PROFILE" in
 hyprland) svc="rsxrover-wayland" ;;
@@ -16,4 +22,4 @@ windows) svc="rsxrover-win" ;;
 esac
 
 docker compose up -d "$svc"
-echo "Container up with profile: $PROFILE"
+echo "Container up with profile: $PROFILE  (HOST_HOME=$HOST_HOME)"

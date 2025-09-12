@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-# Always source ROS first
+# Source ROS
 if [ -f "/opt/ros/${ROS_DISTRO}/setup.bash" ]; then
   source "/opt/ros/${ROS_DISTRO}/setup.bash"
+fi
+
+# Sync dotfiles from host (if mount is present)
+if [ "${SYNC_DOTFILES_ON_START:-0}" = "1" ] && [ -d "/host_home" ]; then
+  /usr/local/bin/sync_dotfiles.sh || true
 fi
 
 # Overlay workspace if present
