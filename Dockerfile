@@ -42,10 +42,11 @@ RUN set -eux; \
   rm -f /tmp/go.tgz; \
   rm -rf /var/lib/apt/lists/*
 
-# --- Lazygit CLI (build from source with Go) ---
+# --- Lazygit CLI (build from source with modern Go) ---
 RUN set -eux; \
-  apt-get update && apt-get install -y --no-install-recommends git golang ca-certificates && \
+  apt-get update && apt-get install -y --no-install-recommends git ca-certificates && \
   GOBIN=/usr/local/bin GOPATH=/root/go GO111MODULE=on go install github.com/jesseduffield/lazygit@latest && \
+  lazygit --version; \
   rm -rf /root/go && \
   rm -rf /var/lib/apt/lists/*
 
@@ -55,6 +56,46 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8
+
+# --- Node.js (LTS) for JS/TS-based language servers like Pyright ---
+ARG NODE_VERSION=20.17.0
+RUN set -eux; \
+  apt-get update && apt-get install -y --no-install-recommends ca-certificates curl xz-utils; \
+  arch="$(dpkg --print-architecture)"; \
+  case "$arch" in \
+    amd64) node_arch="x64" ;; \
+    arm64) node_arch="arm64" ;; \
+    *) echo "Unsupported arch: $arch"; exit 1 ;; \
+  esac; \
+  curl -fsSL --retry 5 --retry-delay 2 -o /tmp/node.tgz "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${node_arch}.tar.xz"; \
+  tar -C /usr/local -xJf /tmp/node.tgz; \
+  ln -sfn "/usr/local/node-v${NODE_VERSION}-linux-${node_arch}" /usr/local/node; \
+  ln -sfn /usr/local/node/bin/node /usr/local/bin/node; \
+  ln -sfn /usr/local/node/bin/npm  /usr/local/bin/npm; \
+  ln -sfn /usr/local/node/bin/npx  /usr/local/bin/npx; \
+  node -v && npm -v; \
+  rm -f /tmp/node.tgz; \
+  rm -rf /var/lib/apt/lists/*
+
+# --- pynvim (Python provider) and Pyright LSP ---
+# Make Mason-installed tools available for any user at interactive shell
+RUN printf 'export PATH="$HOME/.local/share/nvim/mason/bin:$HOME/.local/bin:$PATH"\n' >/etc/profile.d/10-mason-path.sh
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pynvim \
+ && rm -rf /var/lib/apt/lists/*
+RUN npm install -g pyright
+
+# Make Node & Mason bins available in all interactive shells + hard symlinks for pyright
+RUN set -eux; \
+  printf '%s\n' \
+    '# Dev tool paths for all users' \
+    'export PATH="/usr/local/node/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/bin:$PATH"' \
+    > /etc/profile.d/dev_paths.sh && \
+  chmod 0644 /etc/profile.d/dev_paths.sh && \
+  echo '. /etc/profile.d/dev_paths.sh' >> /etc/bash.bashrc && \
+  if [ -f /etc/zsh/zshrc ]; then echo '. /etc/profile.d/dev_paths.sh' >> /etc/zsh/zshrc; fi && \
+  ln -sfn /usr/local/node/bin/pyright            /usr/local/bin/pyright && \
+  ln -sfn /usr/local/node/bin/pyright-langserver /usr/local/bin/pyright-langserver
+
 
 # ---------- User ----------
 RUN groupadd --gid ${USER_GID} ${USERNAME} \
