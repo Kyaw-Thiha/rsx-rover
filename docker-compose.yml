@@ -1,0 +1,89 @@
+version: "3.9"
+
+x-common-env: &common_env
+  ROS_DISTRO: humble
+  WS_DIR: /workspaces/rsx-rover
+  # Keep discovery local by default; change if you need host<->container ROS graph.
+  ROS_LOCALHOST_ONLY: "1"
+  RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+  # Set a domain if you run multiple graphs
+  ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-7}
+
+x-common-vols: &common_vols
+  - ./:/workspaces/rsx-rover:rw
+  - ${HOME}/.ssh:/home/dev/.ssh:ro
+
+services:
+  rsxrover:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: dev
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+        SHELL_FLAVOR: ${SHELL_FLAVOR:-zsh}     # zsh|bash
+        EDITOR_FLAVOR: ${EDITOR_FLAVOR:-nvim}  # nvim|vscode
+    image: rsxrover:humble
+    container_name: rsxrover
+    working_dir: /workspaces/rsx-rover
+    environment:
+      <<: *common_env
+    volumes: *common_vols
+    # Default: no GUI, bridged networking (portable across OS)
+    networks:
+      - default
+    tty: true
+    stdin_open: true
+    user: "${UID:-1000}:${GID:-1000}"
+
+    # -------- Profiles for platform/display --------
+    # Linux Wayland (Hyprland, Sway, GNOME/Wayland): enable this profile
+    profiles: [ "base" ]
+
+  rsxrover-wayland:
+    extends: rsxrover
+    container_name: rsxrover-wayland
+    environment:
+      <<: *common_env
+      QT_QPA_PLATFORM: wayland
+      # Ensure these are exported on the host before 'compose up'
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-wayland-1}
+      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR}
+    volumes:
+      - ./:/workspaces/rsx-rover:rw
+      - ${HOME}/.ssh:/home/dev/.ssh:ro
+      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}
+      - /dev/dri:/dev/dri
+    devices:
+      - /dev/dri
+    network_mode: host
+    profiles: [ "hyprland" ]
+
+  rsxrover-x11:
+    extends: rsxrover
+    container_name: rsxrover-x11
+    environment:
+      <<: *common_env
+      DISPLAY: ${DISPLAY}
+    volumes:
+      - ./:/workspaces/rsx-rover:rw
+      - ${HOME}/.ssh:/home/dev/.ssh:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    network_mode: host
+    profiles: [ "x11" ]
+
+  rsxrover-mac:
+    extends: rsxrover
+    container_name: rsxrover-mac
+    # macOS Docker Desktop: keep bridge net; GUI passthrough not supported natively.
+    profiles: [ "mac" ]
+
+  rsxrover-win:
+    extends: rsxrover
+    container_name: rsxrover-win
+    # Windows Docker Desktop: same note as macOS.
+    profiles: [ "windows" ]
+
+networks:
+  default: {}

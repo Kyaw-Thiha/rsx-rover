@@ -33,4 +33,45 @@ catkin build
 ```
 
 
+## Docker Instructions
+1. Build the image
+```bash
+# zsh + Neovim (default)
+./scripts/build.sh zsh nvim
+
+# bash + VS Code (i.e., don’t install nvim)
+./scripts/build.sh bash vscode
+```
+
+2. Start the container.
+```bash
+# Linux + Hyprland (Wayland)
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"   # Hyprland commonly wayland-1
+./scripts/up.sh hyprland
+
+# Linux + X11
+xhost +local:
+./scripts/up.sh x11
+
+# macOS
+./scripts/up.sh mac
+
+# Windows (PowerShell)
+./scripts/windows-up.ps1 -Profile windows -Shell zsh -Editor nvim
+```
+
+3. Enter the dev shell.
+```bash
+# choose service if you used a profile name (rsxrover, rsxrover-x11, rsxrover-wayland, etc.)
+./scripts/enter.sh rsxrover
+```
+
+4. Inside the container: Install deps & build
+```bash
+./scripts/deps.sh
+./scripts/build_ws.sh
+# run your nodes/launch files; ROS environment is sourced automatically by the entrypoint
+```
+
 
