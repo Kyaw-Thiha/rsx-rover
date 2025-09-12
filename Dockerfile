@@ -27,7 +27,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     less nano vim \
     rsync \
     libpcl-dev \
-    && rm -rf /var/lib/apt/lists/*
+    ripgrep fd-find wl-clipboard xclip \
+ && ln -sfn /usr/bin/fdfind /usr/local/bin/fd \
+ && rm -rf /var/lib/apt/lists/*
+
+# --- Go toolchain (official tarball) ---
+ARG GO_VERSION=1.24.1
+RUN set -eux; \
+  apt-get update && apt-get install -y --no-install-recommends ca-certificates curl; \
+  curl -fsSL --retry 5 --retry-delay 2 -o /tmp/go.tgz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"; \
+  rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tgz; \
+  ln -sfn /usr/local/go/bin/go /usr/local/bin/go; \
+  go version; \
+  rm -f /tmp/go.tgz; \
+  rm -rf /var/lib/apt/lists/*
+
+# --- Lazygit CLI (build from source with Go) ---
+RUN set -eux; \
+  apt-get update && apt-get install -y --no-install-recommends git golang ca-certificates && \
+  GOBIN=/usr/local/bin GOPATH=/root/go GO111MODULE=on go install github.com/jesseduffield/lazygit@latest && \
+  rm -rf /root/go && \
+  rm -rf /var/lib/apt/lists/*
+
+# --- Clang toolchain (compiler + LSP + format/tidy) for ROS Nvim ---
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang clangd clang-format clang-tidy lldb lld ccache python3-colcon-mixin \
+ && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8
 
@@ -55,6 +80,7 @@ RUN set -eux; \
     tar -xzf /tmp/nvim-linux64.tar.gz -C /opt; \
     ln -sfn /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim; \
     nvim --headless +"lua assert(vim.version().minor>=10, 'Need Neovim >= 0.10')" +qa; \
+    echo 'export EDITOR=nvim VISUAL=nvim' >/etc/profile.d/99-editor.sh; \
     rm -f /tmp/nvim-linux64.tar.gz /tmp/nvim-linux64.tar.gz.sha256sum; \
     rm -rf /var/lib/apt/lists/*; \
   fi

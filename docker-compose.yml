@@ -45,6 +45,8 @@ services:
       - ./:/workspaces/rsx-rover:rw
       - ${HOME}/.ssh:/home/dev/.ssh:ro
       - ${HOST_HOME}:/host_home:ro
+      - ${HOME}/.config/nvim:/home/dev/.config/nvim:ro
+      - ${HOME}/.config/lazygit:/home/dev/.config/lazygit:ro
       - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}
       - /dev/dri:/dev/dri
     devices: [ "/dev/dri" ]
