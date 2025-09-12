@@ -38,13 +38,26 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
  && chmod 0440 /etc/sudoers.d/${USERNAME}
 
 # ---------- Optional shells & editors ----------
+ARG NEOVIM_VERSION=0.10.3 
 RUN set -eux; \
-    if [ "${SHELL_FLAVOR}" = "zsh" ]; then \
-        apt-get update && apt-get install -y zsh && rm -rf /var/lib/apt/lists/*; \
-    fi; \
-    if [ "${EDITOR_FLAVOR}" = "nvim" ]; then \
-        apt-get update && apt-get install -y neovim && rm -rf /var/lib/apt/lists/*; \
-    fi
+  if [ "${SHELL_FLAVOR}" = "zsh" ]; then \
+    apt-get update && apt-get install -y --no-install-recommends zsh && \
+    rm -rf /var/lib/apt/lists/*; \
+  fi; \
+  if [ "${EDITOR_FLAVOR}" = "nvim" ]; then \
+    # --- Neovim via official binary (guaranteed >= 0.10) ---
+    apt-get update && apt-get purge -y neovim neovim-runtime || true; \
+    apt-get install -y --no-install-recommends ca-certificates curl; \
+    url_base="https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}"; \
+    curl -fL --retry 5 --retry-delay 2 -o /tmp/nvim-linux64.tar.gz "${url_base}/nvim-linux64.tar.gz"; \
+    curl -fL --retry 5 --retry-delay 2 -o /tmp/nvim-linux64.tar.gz.sha256sum "${url_base}/nvim-linux64.tar.gz.sha256sum"; \
+    (cd /tmp && sha256sum -c nvim-linux64.tar.gz.sha256sum); \
+    tar -xzf /tmp/nvim-linux64.tar.gz -C /opt; \
+    ln -sfn /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim; \
+    nvim --headless +"lua assert(vim.version().minor>=10, 'Need Neovim >= 0.10')" +qa; \
+    rm -f /tmp/nvim-linux64.tar.gz /tmp/nvim-linux64.tar.gz.sha256sum; \
+    rm -rf /var/lib/apt/lists/*; \
+  fi
 
 # ---------- rosdep ----------
 RUN rosdep init || true
