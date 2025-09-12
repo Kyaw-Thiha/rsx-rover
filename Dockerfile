@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     iproute2 iputils-ping net-tools \
     less nano vim \
     rsync \
+    libpcl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8
@@ -61,6 +62,36 @@ RUN if [ "${SHELL_FLAVOR}" = "zsh" ]; then \
       echo 'emulate sh -c "source /opt/ros/$ROS_DISTRO/setup.bash" >/dev/null 2>&1' >> /etc/skel/.zshrc && \
       echo 'if [ -f "$WS_DIR/install/setup.zsh" ]; then source "$WS_DIR/install/setup.zsh"; fi' >> /etc/skel/.zshrc; \
     fi
+
+
+# --- GLOBAL: source ROS + workspace for ALL interactive shells (bash & zsh)
+# Use POSIX-friendly setup.sh so it works in any shell.
+RUN mkdir -p /etc/profile.d && \
+    cat >/etc/profile.d/ros2_auto.sh <<'EOF'
+: "${ROS_DISTRO:=humble}"
+# Source ROS distro
+if [ -f "/opt/ros/${ROS_DISTRO}/setup.sh" ]; then . "/opt/ros/${ROS_DISTRO}/setup.sh"; fi
+# Source workspace overlay if present
+if [ -n "${WS_DIR}" ] && [ -f "${WS_DIR}/install/setup.sh" ]; then . "${WS_DIR}/install/setup.sh"; fi
+EOF
+# Ensure interactive shells read it
+RUN echo ". /etc/profile.d/ros2_auto.sh" >> /etc/bash.bashrc && \
+    if [ -f /etc/zsh/zshrc ]; then echo ". /etc/profile.d/ros2_auto.sh" >> /etc/zsh/zshrc; fi
+
+
+# --- GLOBAL: lsd fallback shim so aliases like `alias ls=lsd` still work
+RUN cat >/etc/profile.d/lsd_shim.sh <<'EOF'
+# Provide lsd fallback if not installed
+if ! command -v lsd >/dev/null 2>&1; then
+  lsd() { command ls --color=auto "$@"; }
+  alias lsd='ls --color=auto'
+fi
+EOF
+RUN echo ". /etc/profile.d/lsd_shim.sh" >> /etc/bash.bashrc && \
+    if [ -f /etc/zsh/zshrc ]; then echo ". /etc/profile.d/lsd_shim.sh" >> /etc/zsh/zshrc; fi
+
+# Optional: try to install real lsd (ignore if repo doesn’t have it)
+RUN apt-get update && (apt-get install -y --no-install-recommends lsd || true) && rm -rf /var/lib/apt/lists/*
 
 USER ${USERNAME}
 WORKDIR ${WS_DIR}

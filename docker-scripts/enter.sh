@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Choose which running service to enter; defaults to 'rsxrover'
 SVC="${1:-rsxrover}"
 
 # Set HOST_HOME just like up.sh does
@@ -11,15 +10,17 @@ MINGW* | MSYS* | CYGWIN*) export HOST_HOME="${USERPROFILE}" ;;
 *) export HOST_HOME="${HOME}" ;;
 esac
 
-# Pick the preferred interactive shell based on build arg
-SHELL_BIN="${SHELL_BIN:-/bin/bash}"
-if docker inspect "$SVC" >/dev/null 2>&1; then
-  # Probe if zsh exists
-  if docker compose exec "$SVC" test -x /bin/zsh; then
-    SHELL_BIN="/bin/zsh"
-  fi
-  docker compose exec "$SVC" "$SHELL_BIN" -i
-else
-  echo "Service '$SVC' is not running."
+# Detect the running container for this service (empty if not running)
+CID="$(docker compose ps -q "$SVC" || true)"
+if [[ -z "${CID}" ]]; then
+  echo "Service '$SVC' is not running. Start it with: ./docker-scripts/up.sh <profile>"
   exit 1
 fi
+
+# Prefer zsh if available inside the container
+SHELL_BIN="${SHELL_BIN:-/bin/bash}"
+if docker compose exec "$SVC" test -x /bin/zsh >/dev/null 2>&1; then
+  SHELL_BIN="/bin/zsh"
+fi
+
+exec docker compose exec "$SVC" "$SHELL_BIN" -i
