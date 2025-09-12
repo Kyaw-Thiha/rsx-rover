@@ -21,7 +21,7 @@ source_relaxed() {
 
 # Source ROS 2 env and build
 source_relaxed "/opt/ros/${ROS_DISTRO}/setup.sh"
-colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 # Overlay (for this subshell)
 source_relaxed "install/setup.sh"
