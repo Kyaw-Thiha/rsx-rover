@@ -40,17 +40,17 @@ services:
       <<: *common_env
       QT_QPA_PLATFORM: wayland
       WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-wayland-1}
-      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR}
-      DISPLAY: ${DISPLAY}
+      XDG_RUNTIME_DIR: /run/user/1000          # ← set container-side path
+      DISPLAY: ${DISPLAY}                      # ← allow X11 fallback too
     volumes:
       - ./:/workspaces/rsx-rover:rw
       - ${HOME}/.ssh:/home/dev/.ssh:ro
       - ${HOST_HOME}:/host_home:ro
       - ${HOME}/.config/nvim:/home/dev/.config/nvim:ro
       - ${HOME}/.config/lazygit:/home/dev/.config/lazygit:ro
-      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}
+      - ${XDG_RUNTIME_DIR}:/run/user/1000      # ← mount the WHOLE runtime dir
       - /dev/dri:/dev/dri
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw       # ← for X11 fallback
     devices: [ "/dev/dri" ]
     network_mode: host
     profiles: [ "hyprland" ]
