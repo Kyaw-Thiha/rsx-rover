@@ -41,6 +41,7 @@ services:
       QT_QPA_PLATFORM: wayland
       WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-wayland-1}
       XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR}
+      DISPLAY: ${DISPLAY}
     volumes:
       - ./:/workspaces/rsx-rover:rw
       - ${HOME}/.ssh:/home/dev/.ssh:ro
@@ -49,6 +50,7 @@ services:
       - ${HOME}/.config/lazygit:/home/dev/.config/lazygit:ro
       - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}
       - /dev/dri:/dev/dri
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
     devices: [ "/dev/dri" ]
     network_mode: host
     profiles: [ "hyprland" ]

@@ -46,8 +46,12 @@ catkin build
 2. Start the container.
 ```bash
 # Linux + Hyprland (Wayland)
+# Notes:
+# Hyprland commonly wayland-1
+# xhost +local: is used in wayland for using x11 when using Gazebo
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"   # Hyprland commonly wayland-1
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"   
+xhost +local:
 ./docker-scripts/up.sh hyprland
 
 # Linux + X11

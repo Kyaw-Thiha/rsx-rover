@@ -158,6 +158,36 @@ EOF
 RUN echo ". /etc/profile.d/ros2_auto.sh" >> /etc/bash.bashrc && \
     if [ -f /etc/zsh/zshrc ]; then echo ". /etc/profile.d/ros2_auto.sh" >> /etc/zsh/zshrc; fi
 
+# --- ROS 2 visualization + sim (Humble) ---
+# RViz2 + rqt suite + Gazebo Classic + helpers for graphs & GL
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-rviz2 \
+    ros-humble-rqt ros-humble-rqt-graph ros-humble-rqt-image-view ros-humble-rqt-tf-tree \
+    ros-humble-joint-state-publisher-gui \
+    ros-humble-gazebo-ros-pkgs gazebo \
+    graphviz python3-pydot \
+    qtwayland5 libgl1-mesa-dri mesa-utils \
+ && rm -rf /var/lib/apt/lists/*
+
+# --- Gazebo Wayland->X11 fallback wrappers (for Hyprland) ---
+RUN set -eux; \
+  printf '%s\n' '#!/usr/bin/env bash' \
+                'export QT_QPA_PLATFORM=xcb' \
+                'exec gazebo "$@"' \
+    > /usr/local/bin/gazebo_x11 && chmod +x /usr/local/bin/gazebo_x11; \
+  printf '%s\n' '#!/usr/bin/env bash' \
+                'export QT_QPA_PLATFORM=xcb' \
+                'exec gzclient "$@"' \
+    > /usr/local/bin/gzclient_x11 && chmod +x /usr/local/bin/gzclient_x11
+
+# --- Auto-alias Gazebo to X11 only when running under Wayland ---
+RUN printf '%s\n' \
+'# If we are on Wayland, prefer X11 for Gazebo GUI (more stable)' \
+'if [ -n "$WAYLAND_DISPLAY" ]; then' \
+'  alias gazebo="gazebo_x11"' \
+'  alias gzclient="gzclient_x11"' \
+'fi' \
+> /etc/profile.d/20-gazebo-wayland.sh
 
 # --- GLOBAL: lsd fallback shim so aliases like `alias ls=lsd` still work
 RUN cat >/etc/profile.d/lsd_shim.sh <<'EOF'
