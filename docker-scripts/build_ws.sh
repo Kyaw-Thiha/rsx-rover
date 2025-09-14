@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-WS_DIR="${WS_DIR:-/workspaces/rsx-rover}"
+# Workspace root; default to /rover_ws
+WS_DIR="${WS_DIR:-/rover_ws}"
 : "${ROS_DISTRO:=humble}"
 
+# Always operate from the workspace root
 cd "$WS_DIR"
 
 # Source a file with nounset turned off, then restore prior state
@@ -24,7 +26,7 @@ source_relaxed "/opt/ros/${ROS_DISTRO}/setup.sh"
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 # Overlay (for this subshell)
-source_relaxed "install/setup.sh"
+source_relaxed "${WS_DIR}/install/setup.sh"
 
-echo "Build complete."
-echo "Tip: open a new shell (or 'source install/setup.sh') to overlay your current session."
+echo "Build complete at ${WS_DIR}."
+echo "Tip: open a new shell (or 'source ${WS_DIR}/install/setup.sh') to overlay your current session."

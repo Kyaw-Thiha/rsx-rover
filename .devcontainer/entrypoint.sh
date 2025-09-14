@@ -12,7 +12,7 @@ if [ "${SYNC_DOTFILES_ON_START:-0}" = "1" ] && [ -d "/host_home" ]; then
 fi
 
 # Overlay workspace if present
-WS_DIR="${WS_DIR:-/workspaces/rsx-rover}"
+WS_DIR="${WS_DIR:-/rover_ws}"
 if [ -f "${WS_DIR}/install/setup.bash" ]; then
   source "${WS_DIR}/install/setup.bash"
 fi

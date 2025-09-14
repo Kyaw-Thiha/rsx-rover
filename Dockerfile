@@ -10,7 +10,7 @@ ARG EDITOR_FLAVOR=nvim   # nvim | vscode
 
 ENV DEBIAN_FRONTEND=noninteractive \
     ROS_DISTRO=humble \
-    WS_DIR=/workspaces/rsx-rover \
+    WS_DIR=/rover_ws \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     # toggle dotfiles sync on entry
@@ -102,6 +102,9 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
  && useradd -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
  && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USERNAME} \
  && chmod 0440 /etc/sudoers.d/${USERNAME}
+
+RUN mkdir -p /rover_ws/src && chown -R ${USER_UID}:${USER_GID} /rover_ws
+
 
 # ---------- Optional shells & editors ----------
 ARG NEOVIM_VERSION=0.10.3 

@@ -1,13 +1,13 @@
 x-common-env: &common_env
   ROS_DISTRO: humble
-  WS_DIR: /workspaces/rsx-rover
+  WS_DIR: /rover_ws
   ROS_LOCALHOST_ONLY: "1"
   RMW_IMPLEMENTATION: rmw_fastrtps_cpp
   ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-7}
   SYNC_DOTFILES_ON_START: ${SYNC_DOTFILES_ON_START:-1}
 
 x-common-vols: &common_vols
-  - ./:/workspaces/rsx-rover:rw
+  - ./:/rover_ws/src:rw
   - ${HOME}/.ssh:/home/dev/.ssh:ro
   - ${HOST_HOME}:/host_home:ro   # <— host home (set by scripts)
 
@@ -24,7 +24,8 @@ services:
         EDITOR_FLAVOR: ${EDITOR_FLAVOR:-nvim}  # nvim|vscode
     image: rsxrover:humble
     container_name: rsxrover
-    working_dir: /workspaces/rsx-rover
+    working_dir: /rover_ws
+
     environment: *common_env
     volumes: *common_vols
     networks: [ default ]
@@ -43,7 +44,7 @@ services:
       XDG_RUNTIME_DIR: /run/user/1000          # ← set container-side path
       DISPLAY: ${DISPLAY}                      # ← allow X11 fallback too
     volumes:
-      - ./:/workspaces/rsx-rover:rw
+      - ./:/rover_ws/src:rw
       - ${HOME}/.ssh:/home/dev/.ssh:ro
       - ${HOST_HOME}:/host_home:ro
       - ${HOME}/.config/nvim:/home/dev/.config/nvim:ro
@@ -62,7 +63,7 @@ services:
       <<: *common_env
       DISPLAY: ${DISPLAY}
     volumes:
-      - ./:/workspaces/rsx-rover:rw
+      - ./:/rover_ws/src:rw
       - ${HOME}/.ssh:/home/dev/.ssh:ro
       - ${HOST_HOME}:/host_home:ro
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
