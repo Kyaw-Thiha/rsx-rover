@@ -103,7 +103,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
  && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USERNAME} \
  && chmod 0440 /etc/sudoers.d/${USERNAME}
 
-RUN mkdir -p /rover_ws/src && chown -R ${USER_UID}:${USER_GID} /rover_ws
+RUN mkdir -p /rover_ws/src/rsx-rover && chown -R ${USER_UID}:${USER_GID} /rover_ws
 
 
 # ---------- Optional shells & editors ----------
