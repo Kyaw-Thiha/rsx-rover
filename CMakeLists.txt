@@ -187,6 +187,54 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+# Install Python nodes in nested subfolders (e.g., rover/autonomy/scripts)
+# file(GLOB_RECURSE ROVER_EXTRA_PY
+#   "${CMAKE_CURRENT_SOURCE_DIR}/rover/*/scripts/*.py"
+# )
+# if(ROVER_EXTRA_PY)
+#   install(PROGRAMS ${ROVER_EXTRA_PY}
+#     DESTINATION lib/${PROJECT_NAME}
+#   )
+# endif()
+
+# --- Top-level scripts/ (already works with ros2 run)
+file(GLOB ROVER_TOP_PY
+  "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.py"
+)
+
+# --- Any nested scripts under rover/**/scripts/**.py
+file(GLOB_RECURSE ROVER_ALL_PY
+  "${CMAKE_CURRENT_SOURCE_DIR}/rover/*.py"
+)
+# Keep only files that live somewhere under a 'scripts' directory
+list(FILTER ROVER_ALL_PY INCLUDE REGEX ".*/scripts/.+\\.py$")
+
+# Merge and de-dup
+set(ROVER_PY ${ROVER_TOP_PY} ${ROVER_ALL_PY})
+list(REMOVE_DUPLICATES ROVER_PY)
+
+# Install only if we actually found files (install(PROGRAMS) errors on empty list)
+if(ROVER_PY)
+  install(PROGRAMS ${ROVER_PY}
+    DESTINATION lib/${PROJECT_NAME}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                GROUP_READ GROUP_EXECUTE
+                WORLD_READ WORLD_EXECUTE
+  )
+endif()
+
+# Collect all YAMLs that live anywhere under a 'scripts' dir
+file(GLOB_RECURSE ROVER_YAML_SCRIPTS_FLAT
+  "${CMAKE_CURRENT_SOURCE_DIR}/rover/*/scripts/*.yml"
+  "${CMAKE_CURRENT_SOURCE_DIR}/rover/*/scripts/*.yaml"
+)
+
+if(ROVER_YAML_SCRIPTS_FLAT)
+  install(FILES ${ROVER_YAML_SCRIPTS_FLAT}
+    DESTINATION "lib/${PROJECT_NAME}"
+  )
+endif()
+
 # install(
 #   Files rover/drive/config/goose.yaml
 #   DESTINATION share/${PROJECT_NAME}/config
